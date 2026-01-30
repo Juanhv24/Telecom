@@ -31,26 +31,20 @@ st.markdown("""
 # ==============================================================================
 @st.cache_resource
 def load_assets():
-    # Función auxiliar para buscar archivos inteligentemente
     def encontrar_archivo(nombre_archivo, carpeta_local=''):
-        # 1. Intenta buscar en la carpeta actual (Ideal para GitHub/Cloud)
         path_actual = os.path.join(os.path.dirname(__file__), nombre_archivo)
         if os.path.exists(path_actual):
             return path_actual
         
-        # 2. Intenta buscar usando rutas relativas locales (Tu estructura de PC)
-        # '../Data' significa: Sube un nivel desde 'Notebooks' y entra a 'Data'
         path_local = os.path.join(os.path.dirname(__file__), '..', carpeta_local, nombre_archivo)
         if os.path.exists(path_local):
             return path_local
             
-        return None # Falló
+        return None
 
     # --- DEFINICIÓN DE ARCHIVOS ---
-    # El modelo suele estar en la misma carpeta del notebook
     file_model = encontrar_archivo('modelo_churn_interconnect.pkl', carpeta_local='Notebooks')
     
-    # Los CSVs suelen estar en la carpeta Data
     file_xtest = encontrar_archivo('X_test_interconnect.csv', carpeta_local='Data')
     file_ytest = encontrar_archivo('y_test_interconnect.csv', carpeta_local='Data')
     file_df_full = encontrar_archivo('df_final_interconnect.csv', carpeta_local='Data')
@@ -154,7 +148,6 @@ with tab2:
         st.markdown("### 🔍 Segmentación de Clientes")
         df_viz = df_full_loaded.copy()
         
-        # Mapeo para que se vea bonito en los filtros
         df_viz['Churn_Label'] = df_viz['Churn'].map({0: 'Retenido', 1: 'Fugado'})
         
         c1, c2, c3 = st.columns(3)
@@ -189,14 +182,13 @@ with tab2:
 
     # --- C. GRÁFICOS DE IMPACTO ---
     
-    # FILA 1: CUÁNDO Y POR QUÉ
+    # FILA 1:
     r1c1, r1c2 = st.columns(2)
     
     with r1c1:
         st.subheader("1. La 'Zona de Peligro' (Antigüedad)")
         st.caption("¿En qué mes suelen cancelar los clientes?")
         
-        # Filtramos solo los que se fugaron para ver cuándo mueren
         churners_only = df_filtered[df_filtered['Churn'] == 1]
         
         fig_hist = px.histogram(churners_only, x='Tenure_Days', nbins=20,
@@ -220,7 +212,7 @@ with tab2:
         fig_bar.update_layout(yaxis_range=[0, 100])
         st.plotly_chart(fig_bar, use_container_width=True)
 
-    # FILA 2: DÓNDE ESTÁ EL DINERO
+    # FILA 2: 
     r2c1, r2c2 = st.columns(2)
 
     with r2c1:
