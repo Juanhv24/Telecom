@@ -1,6 +1,6 @@
 # 📡 Interconnect Telecom: Churn Prediction & Retention Dashboard
 
-[![Streamlit App]([https://static.streamlit.io/badges/streamlit_badge_black_white.svg](https://telecom-ta8rdbryzmacvuwadjzwky.streamlit.app/))]
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://telecom-ta8rdbryzmacvuwadjzwky.streamlit.app/)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![Library](https://img.shields.io/badge/Library-Scikit--Learn%20|%20LightGBM-orange)
 ![Deployment](https://img.shields.io/badge/Deployment-Streamlit-red)
