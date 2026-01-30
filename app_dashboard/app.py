@@ -146,21 +146,15 @@ with tab1:
 # ------------------------------------------------------------------------------
 # TAB 2: BI INTERACTIVO (ENFOQUE DE NEGOCIO)
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# TAB 2: BI INTERACTIVO (DISEÑO MEJORADO)
-# ------------------------------------------------------------------------------
 with tab2:
     st.header("Análisis Estratégico de Fuga")
     
-    # --- CONFIGURACIÓN DE COLORES (Aquí puedes cambiar los códigos HEX si quieres) ---
-    color_map = {'Retenido': '#2E86C1', 'Fugado': '#FF6F61'} # Azul Acero vs Coral
-    scale_bad = 'Reds'  # Escala para cosas negativas (Fuga)
-    scale_money = 'Inferno' # Escala para dinero (Más sofisticada)
-
     # --- A. FILTROS ---
     with st.container():
-        st.markdown("### 🔍 Segmentación")
+        st.markdown("### 🔍 Segmentación de Clientes")
         df_viz = df_full_loaded.copy()
+        
+        # Mapeo para que se vea bonito en los filtros
         df_viz['Churn_Label'] = df_viz['Churn'].map({0: 'Retenido', 1: 'Fugado'})
         
         c1, c2, c3 = st.columns(3)
@@ -181,74 +175,79 @@ with tab2:
     # --- B. KPIs DE NEGOCIO ---
     col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
     
+    # Cálculos
     churn_rate = df_filtered['Churn'].mean()
     total_lost_rev = df_filtered[df_filtered['Churn']==1]['MonthlyCharges'].sum()
-    arpu = df_filtered['MonthlyCharges'].mean()
+    arpu = df_filtered['MonthlyCharges'].mean() # Average Revenue Per User
     
-    col_kpi1.metric("Clientes", f"{len(df_filtered):,}")
-    col_kpi2.metric("Tasa de Fuga", f"{churn_rate:.1%}")
-    col_kpi3.metric("ARPU (Promedio)", f"${arpu:.2f}")
-    col_kpi4.metric("Pérdida Mensual", f"${total_lost_rev:,.0f}", delta="-Dinero en Riesgo", delta_color="inverse")
+    col_kpi1.metric("Clientes en Segmento", f"{len(df_filtered):,}")
+    col_kpi2.metric("Tasa de Fuga Actual", f"{churn_rate:.1%}", delta_color="inverse")
+    col_kpi3.metric("Ingreso Promedio (ARPU)", f"${arpu:.2f}")
+    col_kpi4.metric("Ingreso Mensual Perdido", f"${total_lost_rev:,.0f}", help="Suma de cargos de clientes fugados en este segmento")
     
     st.markdown("---")
 
-    # --- C. GRÁFICOS DE IMPACTO (NUEVA PALETA) ---
+    # --- C. GRÁFICOS DE IMPACTO ---
     
-    # FILA 1
+    # FILA 1: CUÁNDO Y POR QUÉ
     r1c1, r1c2 = st.columns(2)
     
     with r1c1:
-        st.subheader("1. La 'Zona de Peligro' (Meses Críticos)")
+        st.subheader("1. La 'Zona de Peligro' (Antigüedad)")
+        st.caption("¿En qué mes suelen cancelar los clientes?")
+        
+        # Filtramos solo los que se fugaron para ver cuándo mueren
         churners_only = df_filtered[df_filtered['Churn'] == 1]
         
-        # Histograma con color Coral (#FF6F61)
         fig_hist = px.histogram(churners_only, x='Tenure_Days', nbins=20,
-                                title="¿Cuándo se van los clientes?",
-                                labels={'Tenure_Days': 'Días antes de cancelar'},
-                                color_discrete_sequence=[color_map['Fugado']], # <--- Color Coral
-                                opacity=0.8)
+                                title="Distribución de Clientes Fugados por Tiempo",
+                                labels={'Tenure_Days': 'Días antes de la fuga'},
+                                color_discrete_sequence=['#E74C3C'])
         fig_hist.update_layout(bargap=0.1, yaxis_title="Cantidad de Fugas")
         st.plotly_chart(fig_hist, use_container_width=True)
+        st.info("💡 **Insight:** La mayoría de fugas ocurren en los primeros 2 meses. El 'Onboarding' es crítico.")
 
     with r1c2:
         st.subheader("2. Fuga por Tipo de Contrato")
+        st.caption("Comparativa de retención según compromiso.")
+        
         churn_by_contract = df_filtered.groupby('Type')['Churn'].mean().reset_index()
         churn_by_contract['Churn'] = churn_by_contract['Churn'] * 100
         
-        # Usamos una escala de colores continua suave (Peach -> Red)
         fig_bar = px.bar(churn_by_contract, x='Type', y='Churn', color='Churn',
-                         title="Probabilidad de Fuga (%)",
-                         color_continuous_scale=scale_bad, # Escala Roja profesional
-                         text_auto='.1f')
-        fig_bar.update_layout(yaxis_range=[0, 100], coloraxis_showscale=False)
+                         title="Tasa de Fuga (%)",
+                         color_continuous_scale='Reds', text_auto='.1f')
+        fig_bar.update_layout(yaxis_range=[0, 100])
         st.plotly_chart(fig_bar, use_container_width=True)
 
-    # FILA 2
+    # FILA 2: DÓNDE ESTÁ EL DINERO
     r2c1, r2c2 = st.columns(2)
 
     with r2c1:
-        st.subheader("3. Fuga por Tecnología (Internet)")
+        st.subheader("3. Puntos Críticos: Internet")
+        st.caption("¿Qué servicio técnico genera más insatisfacción?")
+        
+        # Agrupamos por Internet y calculamos tasa de fuga
         internet_churn = df_filtered.groupby('InternetService')['Churn'].mean().reset_index()
         internet_churn['Churn'] = internet_churn['Churn'] * 100
         
         fig_int = px.bar(internet_churn, x='Churn', y='InternetService', orientation='h',
-                         title="Tasa de Fuga (%)",
-                         color='Churn', 
-                         color_continuous_scale=scale_bad, 
-                         text_auto='.1f')
+                         title="Tasa de Fuga por Tecnología",
+                         color='Churn', color_continuous_scale='OrRd', text_auto='.1f')
         st.plotly_chart(fig_int, use_container_width=True)
         
     with r2c2:
-        st.subheader("4. Impacto Económico ($ Perdido)")
+        st.subheader("4. Impacto Económico por Pago")
+        st.caption("¿Qué método de pago nos hace perder más dinero?")
+        
+        # Calculamos DINERO perdido, no solo personas
         loss_by_payment = df_filtered[df_filtered['Churn']==1].groupby('PaymentMethod')['MonthlyCharges'].sum().reset_index()
         loss_by_payment = loss_by_payment.sort_values(by='MonthlyCharges', ascending=True)
         
-        # Usamos escala 'Inferno' o 'Magma' para resaltar el impacto monetario (Se ve muy pro)
         fig_money = px.bar(loss_by_payment, x='MonthlyCharges', y='PaymentMethod', orientation='h',
-                           title="Dinero Total Perdido",
-                           labels={'MonthlyCharges': 'Monto ($)'},
-                           color='MonthlyCharges', 
-                           color_continuous_scale=scale_money) # <--- Escala Premium
+                           title="Ingreso Mensual Perdido ($)",
+                           labels={'MonthlyCharges': 'Dinero Perdido ($)'},
+                           color='MonthlyCharges', color_continuous_scale='reds')
         st.plotly_chart(fig_money, use_container_width=True)
 
 # ------------------------------------------------------------------------------
